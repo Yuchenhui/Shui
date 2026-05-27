@@ -87,9 +87,4 @@ tauri-plugin-updater = "2"
 [features]
 cargo-clippy = []
 
-[profile.release]
-lto = true
-codegen-units = 1
-strip = true
-panic = "abort"
-opt-level = "z"
+# release profile 已上移到 workspace 根 Cargo.toml（子包 profile 会被 cargo 忽略）
