@@ -4483,7 +4483,6 @@ dependencies = [
  "core-graphics 0.23.2",
  "dbus",
  "gtk",
- "lazy_static",
  "notify-rust",
  "objc",
  "objc-foundation",

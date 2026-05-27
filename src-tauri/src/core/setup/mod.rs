@@ -40,18 +40,16 @@ pub fn default(app_handle: &tauri::AppHandle) {
         let _ = app_handle.set_activation_policy(tauri::ActivationPolicy::Accessory);
     }
 
-    let is_running = IS_RUNNING.clone();
-
     // 启动计时器线程
     let timer_handle = app_handle.clone();
     let timer_thread = thread::Builder::new()
         .name("timer-thread".into())
         .spawn(move || loop {
-            if !is_running.load(Ordering::SeqCst) {
+            if !IS_RUNNING.load(Ordering::SeqCst) {
                 thread::sleep(Duration::from_millis(100));
                 continue;
             }
-            run_timer(&timer_handle, &is_running);
+            run_timer(&timer_handle, &IS_RUNNING);
         })
         .expect("无法创建计时器线程");
 
