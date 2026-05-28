@@ -67,3 +67,38 @@ cargo build --release -p shui-mini
 ### 内存目标
 
 Windows 上稳定运行时内存占用应在 10~15 MB 范围。
+
+## GitHub Actions 跨平台构建
+
+仓库附带了一个跨平台构建工作流模板：`shui-mini/ci/build-shui-mini.yaml`。
+**首次启用需要把它挪到 `.github/workflows/` 下**（GitHub App 凭据无 `workflows` 权限，
+所以不能由 Claude 直接推送到那个位置，需要你本地拷贝一次）：
+
+```bash
+mkdir -p .github/workflows
+cp shui-mini/ci/build-shui-mini.yaml .github/workflows/
+git add .github/workflows/build-shui-mini.yaml
+git commit -m "ci(shui-mini): enable cross-platform build workflow"
+git push
+```
+
+之后这个 workflow 由 `.github/workflows/` 里的副本驱动，`shui-mini/ci/` 下保留
+模板仅作参考（修改后记得同步两边）。
+
+工作流提供：
+
+| 触发方式 | 行为 |
+|---|---|
+| 推 `mini-v*` 标签（如 `mini-v0.1.0`）| 4 个平台构建 + 自动创建 GitHub Release |
+| PR 涉及 `shui-mini/` | 仅 CI 验证编译 |
+| 手动 `workflow_dispatch` | 产 Actions artifact，不发 Release |
+
+构建矩阵：
+
+| 平台 | Runner | 产物 |
+|---|---|---|
+| Windows x64 | `windows-latest` (MSVC) | `shui-mini-windows-x64.zip` |
+| macOS ARM64 | `macos-latest` | `shui-mini-macos-arm64.tar.gz` |
+| macOS x64   | `macos-13` (Intel) | `shui-mini-macos-x64.tar.gz` |
+| Linux x64   | `ubuntu-22.04` | `shui-mini-linux-x64.tar.gz` |
+
