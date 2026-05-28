@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
   env: {
     APP_VERSION: version,
   },
+  experimental: {
+    optimizePackageImports: ["@radix-ui", "lucide-react"],
+  },
 };
 
 export default nextConfig;

@@ -6,7 +6,7 @@ import {
   unregisterAll,
 } from "@tauri-apps/plugin-global-shortcut";
 import { useEffect, useState } from "react";
-import { listen, TauriEvent } from "@tauri-apps/api/event";
+import { listen, TauriEvent, type UnlistenFn } from "@tauri-apps/api/event";
 import { Progress } from "@/components/ui/progress";
 import { ArrowRight } from "lucide-react";
 import { load } from "@tauri-apps/plugin-store";
@@ -115,30 +115,31 @@ export default function ReminderPage() {
   useEffect(() => {
     registerEscShortcut();
 
-    listen("countdown", (event) => {
-      setCountdown(event.payload as number);
-      if (event.payload === 0) {
-        setTimeout(hideWindowAction, 500);
-      }
-    });
-
-    // TODO:被其他窗口隐藏时，注销快捷键
-    // 待确认多屏场景下，是否需要注销快捷键
-    listen("reminder_already_hidden", () => {
-      unregisterAll();
-    });
-
-    // 监听窗口显示事件
-    listen(TauriEvent.WINDOW_FOCUS, () => {
-      console.log("TauriEvent.WINDOW_FOCUS");
-      registerEscShortcut();
-    });
+    const unlistenPromises: Promise<UnlistenFn>[] = [
+      listen("countdown", (event) => {
+        setCountdown(event.payload as number);
+        if (event.payload === 0) {
+          setTimeout(hideWindowAction, 500);
+        }
+      }),
+      // TODO:被其他窗口隐藏时，注销快捷键
+      // 待确认多屏场景下，是否需要注销快捷键
+      listen("reminder_already_hidden", () => {
+        unregisterAll();
+      }),
+      // 监听窗口显示事件
+      listen(TauriEvent.WINDOW_FOCUS, () => {
+        console.log("TauriEvent.WINDOW_FOCUS");
+        registerEscShortcut();
+      }),
+    ];
 
     currentMonitor().then((mo) => {
       setMonitorName(mo?.name || "");
     });
 
     return () => {
+      unlistenPromises.forEach((p) => p.then((fn) => fn()));
       unregisterAll();
     };
   }, []);
@@ -166,7 +167,7 @@ export default function ReminderPage() {
 
   useEffect(() => {
     if (!monitorName) return;
-    listen(TauriEvent.WINDOW_MOVED, async () => {
+    const unlistenPromise = listen(TauriEvent.WINDOW_MOVED, async () => {
       console.log("TauriEvent.WINDOW_MOVED", monitorName);
       const mo = await currentMonitor();
       if (mo?.name !== monitorName) {
@@ -175,6 +176,9 @@ export default function ReminderPage() {
         invoke("hide_reminder_window", { label: win.label });
       }
     });
+    return () => {
+      unlistenPromise.then((fn) => fn());
+    };
   }, [monitorName]);
 
   useEffect(() => {
